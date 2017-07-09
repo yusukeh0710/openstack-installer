@@ -2,11 +2,7 @@
 source openstack.ini
 
 # OpenStack packages
-apt-get install software-properties-common
-add-apt-repository cloud-archive:mitaka
-apt-get update && apt-get dist-upgrade
 apt-get install -y python-openstackclient
-
 
 # SQL database
 apt-get install -y mariadb-server python-pymysql
