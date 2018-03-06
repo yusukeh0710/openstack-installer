@@ -1,0 +1,18 @@
+# Dockerfile to build base image for
+# providing
+FROM openstack_base:latest
+MAINTAINER yhayashi
+
+# Install ...
+RUN DEBIAN_FRONTEND=noninteractive apt-get -y install glance
+
+# Download test image file
+RUN wget http://download.cirros-cloud.net/0.3.5/cirros-0.3.5-x86_64-disk.img
+
+# Main
+COPY scripts/glance/setup_glance.sh ./
+COPY scripts/glance/start_glance.sh ./
+COPY conf/glance/etc/glance/glance-api.conf /etc/glance/glance-api.conf
+COPY conf/glance/etc/glance/glance-registry.conf /etc/glance/glance-registry.conf
+
+CMD ["./start_glance.sh"]

@@ -1,0 +1,20 @@
+# Dockerfile to build base image for
+# providing Database
+FROM openstack_base:latest
+MAINTAINER yhayashi
+
+# Install Packagee
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y mariadb-server python-pymysql
+
+# ARG & ENV
+ARG BASE_IP
+
+# Setup
+COPY scripts/db/start_db.sh ./
+COPY scripts/db/add_db_user.sh ./
+COPY conf/db/etc/mysql/mariadb.conf.d/99-openstack.cnf /etc/mysql/mariadb.conf.d/99-openstack.cnf
+RUN sed -i "s/BASE_IP/${BASE_IP}/g" /etc/mysql/mariadb.conf.d/99-openstack.cnf
+
+
+# Launch service
+CMD ["./start_db.sh"]

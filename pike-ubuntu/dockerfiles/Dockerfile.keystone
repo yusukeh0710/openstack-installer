@@ -1,0 +1,21 @@
+# Dockerfile to build base image for
+# providing
+FROM openstack_base:latest
+MAINTAINER yhayashi
+
+# Install Package
+RUN echo "manual" > /etc/init/keystone.override
+RUN DEBIAN_FRONTEND=noninteractive apt-get -y install keystone apache2 libapache2-mod-wsgi
+
+# ARG & ENV
+ARG BASE_IP
+
+# Setup Keystone
+COPY scripts/keystone/start_keystone.sh ./
+COPY scripts/keystone/setup_keystone.sh ./
+COPY scripts/keystone/add_keystone_user.sh ./
+COPY conf/keystone/etc/apache2/apache2.conf /etc/apache2/apache2.conf
+COPY conf/keystone/etc/keystone/keystone.conf /etc/keystone/keystone.conf
+
+# Launch memcached and keystone
+CMD ["./start_keystone.sh"]
