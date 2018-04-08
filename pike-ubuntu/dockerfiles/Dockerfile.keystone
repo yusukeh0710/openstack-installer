@@ -1,21 +1,23 @@
-# Dockerfile to build base image for
-# providing
+# Dockerfile to build image for
+# Keystone, Identity Service 
 FROM openstack_base:latest
-MAINTAINER yhayashi
+LABEL maintainer="Yusuke Hayashi <yusuke.hayashi.710@gmail.com>"
 
-# Install Package
-RUN echo "manual" > /etc/init/keystone.override
-RUN DEBIAN_FRONTEND=noninteractive apt-get -y install keystone apache2 libapache2-mod-wsgi
+# Install packages
+RUN DEBIAN_FRONTEND=noninteractive apt install -y keystone apache2 libapache2-mod-wsgi
 
-# ARG & ENV
-ARG BASE_IP
+# Setup
+RUN echo "export PS1=\"\u@keystone:\w\$ \"" >> ~/.bashrc
+COPY scripts/start_keystone.sh ./
+COPY scripts/restart_keystone.sh ./
+COPY scripts/setup_keystone.sh ./
 
-# Setup Keystone
-COPY scripts/keystone/start_keystone.sh ./
-COPY scripts/keystone/setup_keystone.sh ./
-COPY scripts/keystone/add_keystone_user.sh ./
-COPY conf/keystone/etc/apache2/apache2.conf /etc/apache2/apache2.conf
-COPY conf/keystone/etc/keystone/keystone.conf /etc/keystone/keystone.conf
+COPY conf/apache2/apache2.conf /etc/apache2/apache2.conf
+RUN cp /etc/keystone/keystone.conf /etc/keystone/keystone.conf.sample
+COPY conf/keystone/keystone.conf /etc/keystone/keystone.conf
 
-# Launch memcached and keystone
+# Copy additional scripts for operation.
+COPY utils/add_keystone_user.sh ./
+
+# Launch service
 CMD ["./start_keystone.sh"]

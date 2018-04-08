@@ -1,0 +1,22 @@
+# Dockerfile to build image for
+# 
+FROM openstack_base:latest
+LABEL maintainer="Yusuke Hayashi <yusuke.hayashi.710@gmail.com>"
+
+# Install packages
+RUN DEBIAN_FRONTEND=noninteractive apt install -y apache2 libapache2-mod-wsgi openstack-dashboard
+
+# Setup
+RUN echo "export PS1=\"\u@horizon:\w\$ \"" >> ~/.bashrc
+COPY scripts/start_horizon.sh ./
+COPY scripts/restart_horizon.sh ./
+
+RUN cp /etc/openstack-dashboard/local_settings.py /etc/openstack-dashboard/local_settings.pysample
+COPY conf/horizon/local_settings.py /etc/openstack-dashboard/local_settings.py
+COPY conf/apache2/apache2.conf /etc/apache2/apache2.conf
+
+RUN pycompile -p openstack-dashboard /usr/share/openstack-dashboard
+RUN service apache2 restart
+
+# Launch service
+CMD ["./start_horizon.sh"]

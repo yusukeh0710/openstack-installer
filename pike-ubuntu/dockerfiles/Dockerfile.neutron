@@ -1,0 +1,42 @@
+# Dockerfile to build image for
+# Neutron, Network Service
+FROM openstack_base:latest
+LABEL maintainer="Yusuke Hayashi <yusuke.hayashi.710@gmail.com>"
+
+# Install packages
+RUN DEBIAN_FRONTEND=noninteractive apt install -y \
+  neutron-server neutron-plugin-ml2 neutron-linuxbridge-agent \
+  neutron-l3-agent neutron-dhcp-agent neutron-metadata-agent
+
+# ARG & ENV
+ARG CTRL_IP
+ARG NEUTRON_IP
+ARG NEUTRON_NIC
+ARG INSTANCE_METADATA_SECRET
+
+# Setup
+RUN echo "export PS1=\"\u@neutron:\w\$ \"" >> ~/.bashrc
+COPY scripts/start_neutron.sh ./
+COPY scripts/restart_neutron.sh ./
+COPY scripts/setup_neutron.sh ./
+
+RUN cp /etc/neutron/neutron.conf /etc/neutron/neutron.conf.sample
+RUN cp /etc/neutron/plugins/ml2/ml2_conf.ini /etc/neutron/plugins/ml2/ml2_conf.ini.sample
+RUN cp /etc/neutron/plugins/ml2/linuxbridge_agent.ini /etc/neutron/plugins/ml2/linuxbridge_agent.ini.sample
+RUN cp /etc/neutron/l3_agent.ini /etc/neutron/l3_agent.ini.sample
+RUN cp /etc/neutron/dhcp_agent.ini /etc/neutron/dhcp_agent.ini.sample
+RUN cp /etc/neutron/metadata_agent.ini /etc/neutron/metadata_agent.ini.sample
+
+COPY conf/neutron/neutron.conf /etc/neutron/neutron.conf
+COPY conf/neutron/ml2_conf.ini /etc/neutron/plugins/ml2/ml2_conf.ini
+COPY conf/neutron/linuxbridge_agent.ini /etc/neutron/plugins/ml2/linuxbridge_agent.ini
+RUN sed -i "s/NEUTRON_IP/${NEUTRON_IP}/g" /etc/neutron/plugins/ml2/linuxbridge_agent.ini
+RUN sed -i "s/NEUTRON_NIC/${NEUTRON_NIC}/g" /etc/neutron/plugins/ml2/linuxbridge_agent.ini
+COPY conf/neutron/l3_agent.ini /etc/neutron/l3_agent.ini
+COPY conf/neutron/dhcp_agent.ini /etc/neutron/dhcp_agent.ini
+COPY conf/neutron/metadata_agent.ini /etc/neutron/metadata_agent.ini
+RUN sed -i "s/CTRL_IP/${CTRL_IP}/g" /etc/neutron/metadata_agent.ini
+RUN sed -i "s/INSTANCE_METADATA_SECRET/${INSTANCE_METADATA_SECRET}/g" /etc/neutron/metadata_agent.ini
+
+# Launch service
+CMD ["./start_neutron.sh"]

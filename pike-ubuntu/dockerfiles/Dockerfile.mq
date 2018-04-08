@@ -1,18 +1,18 @@
-# Dockerfile to build base image for
-# providing Message Queue
+# Dockerfile to build image for
+# Message Queue
 FROM openstack_base:latest
-MAINTAINER yhayashi
+LABEL maintainer="Yusuke Hayashi <yusuke.hayashi.710@gmail.com>"
 
-# Install Packagee
-RUN DEBIAN_FRONTEND=noninteractive apt-get install -y rabbitmq-server
+# Install packages
+RUN DEBIAN_FRONTEND=noninteractive apt install -y rabbitmq-server
 
-# ARG & ENV
-ARG BASE_IP
+# Setup
+RUN echo "export PS1=\"\u@mq:\w\$ \"" >> ~/.bashrc
+COPY scripts/start_mq.sh ./
+COPY scripts/restart_mq.sh ./
+COPY scripts/setup_mq.sh ./
 
-# Setup message queue
-COPY scripts/mq/start_mq.sh ./
-COPY scripts/mq/setup_mq.sh ./
-COPY conf/mq/etc/rabbitmq/rabbitmq-env.conf /etc/rabbitmq/rabbitmq-env.conf
-RUN sed -i "s/BASE_IP/${BASE_IP}/g" /etc/rabbitmq/rabbitmq-env.conf
+COPY conf/mq/rabbitmq-env.conf /etc/rabbitmq/rabbitmq-env.conf
 
+# Launch service
 CMD ["./start_mq.sh"]

@@ -1,0 +1,33 @@
+# Dockerfile to build image for
+# Nova, Compute Service 
+FROM openstack_base:latest
+LABEL maintainer="Yusuke Hayashi <yusuke.hayashi.710@gmail.com>"
+
+# Install packages
+RUN DEBIAN_FRONTEND=noninteractive apt install -y \
+  nova-api nova-conductor nova-consoleauth \
+  nova-novncproxy nova-scheduler nova-placement-api
+
+# ARG & ENV
+ARG CTRL_IP
+ARG INSTANCE_METADATA_SECRET
+
+# Setup
+RUN echo "export PS1=\"\u@nova:\w\$ \"" >> ~/.bashrc
+COPY scripts/start_nova.sh ./
+COPY scripts/restart_nova.sh ./
+COPY scripts/setup_nova.sh ./
+
+COPY conf/apache2/apache2.conf /etc/apache2/apache2.conf
+RUN cp /etc/nova/nova.conf /etc/nova/nova.conf.sample
+COPY conf/nova/nova.conf /etc/nova/nova.conf
+RUN sed -i "s/CTRL_IP/${CTRL_IP}/g" /etc/nova/nova.conf
+COPY conf/nova/neutron.txt /etc/nova/neutron.txt
+RUN sed -i "s/INSTANCE_METADATA_SECRET/${INSTANCE_METADATA_SECRET}/g" /etc/nova/neutron.txt
+
+# Copy additional scripts for operation.
+COPY utils/add_compute_node.sh ./
+
+# Launch service
+EXPOSE 6080 8774 8775 8778
+CMD ["./start_nova.sh"]

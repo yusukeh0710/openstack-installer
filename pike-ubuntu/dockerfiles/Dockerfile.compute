@@ -1,0 +1,32 @@
+# Dockerfile to build image for
+# Compute Node 
+FROM openstack_base:latest
+LABEL maintainer="Yusuke Hayashi <yusuke.hayashi.710@gmail.com>"
+
+# Install packages
+RUN DEBIAN_FRONTEND=noninteractive apt install -y nova-compute neutron-linuxbridge-agent virt-manager
+
+# ARG & ENV
+ARG CTRL_IP
+ARG COMPUTE_IP
+ARG COMPUTE_NIC
+ARG VIRT_TYPE
+
+# Setup
+COPY scripts/start_compute.sh ./
+COPY scripts/restart_compute.sh ./
+
+COPY conf/compute/nova.conf /etc/nova/nova.conf
+RUN sed -i "s/CTRL_IP/${CTRL_IP}/g" /etc/nova/nova.conf
+RUN sed -i "s/COMPUTE_IP/${COMPUTE_IP}/g" /etc/nova/nova.conf
+
+COPY conf/compute/neutron.conf /etc/neutron/neutron.conf
+COPY conf/compute/linuxbridge_agent.ini /etc/neutron/plugins/ml2/linuxbridge_agent.ini
+RUN sed -i "s/COMPUTE_IP/${COMPUTE_IP}/g" /etc/neutron/plugins/ml2/linuxbridge_agent.ini
+RUN sed -i "s/COMPUTE_NIC/${COMPUTE_NIC}/g" /etc/neutron/plugins/ml2/linuxbridge_agent.ini
+
+# Copy additional scripts for operation.
+COPY utils/change_virt_type.sh ./
+
+# Launch service
+CMD ["./start_compute.sh"]

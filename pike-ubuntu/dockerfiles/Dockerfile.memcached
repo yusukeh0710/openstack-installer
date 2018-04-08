@@ -1,18 +1,21 @@
-# Dockerfile to build base image for
-# providing
+# Dockerfile to build image for
+# MemCached 
 FROM openstack_base:latest
-MAINTAINER yhayashi
+LABEL maintainer="Yusuke Hayashi <yusuke.hayashi.710@gmail.com>"
 
-# Install Package
-RUN DEBIAN_FRONTEND=noninteractive apt-get -y install memcached python-memcache
+# Install packages
+RUN DEBIAN_FRONTEND=noninteractive apt install -y memcached python-memcache
 
 # ARG & ENV
-ARG BASE_IP
+ARG LISTEN_IP
 
-# Setup memcached
-COPY scripts/memcached/start_memcached.sh ./
-COPY conf/memcached/etc/memcached.conf /etc/memcached.conf
-RUN sed -i "s/BASE_IP/${BASE_IP}/g" /etc/memcached.conf
-RUN service memcached restart
+# Setup
+RUN echo "export PS1=\"\u@memcached:\w\$ \"" >> ~/.bashrc
+COPY scripts/start_memcached.sh ./
+COPY scripts/restart_memcached.sh ./
 
+COPY conf/memcached/memcached.conf /etc/memcached.conf
+RUN sed -i "s/LISTEN_IP/${LISTEN_IP}/g" /etc/memcached.conf
+
+# Launch service
 CMD ["./start_memcached.sh"]
